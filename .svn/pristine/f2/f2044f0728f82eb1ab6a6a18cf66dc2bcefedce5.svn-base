@@ -1,0 +1,101 @@
+﻿<Window x:Class="VOD.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        ResizeMode="NoResize"
+        Loaded="Window_Loaded"
+        Unloaded="Window_Unloaded"
+        WindowStartupLocation="CenterScreen"
+        Title="MainWindow" Height="850" Width="1240">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width=".3*"/>
+            <ColumnDefinition Width="1px"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="1px"/>
+            <ColumnDefinition Width=".3*"/>
+        </Grid.ColumnDefinitions>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <MediaElement Volume="{Binding ElementName=volumeSlider, Path=Value}" Name="player"
+                          LoadedBehavior="Manual"/>
+            <Grid Grid.Row="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" x:Name="btnState" Click="btnState_Click">播放</Button>
+                <Button Grid.Column="1" x:Name="btnNext" Click="btnNext_Click">下一曲</Button>
+                <Button Grid.Column="2" x:Name="btnOpen" Click="btnOpen_Click">打开</Button>
+            </Grid>
+                <Grid  Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="音量:"/>
+                    <Slider VerticalAlignment="Center" x:Name="volumeSlider" Grid.Column="1" Value="60"
+                            Maximum="100" Minimum="0" />
+                </Grid>
+            </Grid>
+            <TextBlock Grid.Row="2" Text="歌单" />
+            <ListView Grid.Row="3" Name="songList">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding SongChooser,Mode=TwoWay}"/>
+                            <TextBlock Text="点了歌曲"/>
+                            <TextBlock Text="{Binding SongName,Mode=TwoWay}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+        <Grid Background="Black"  Grid.Column="1"></Grid>
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock HorizontalAlignment="Center" Text="歌词" />
+            <ListView Grid.Row="1" Name="song">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding SongContent}"/>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+        <Grid Background="Black" Grid.Column="3"></Grid>
+        <Grid Grid.Column="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="1px"/>
+                <RowDefinition Height="160"/>
+                <RowDefinition Height="1px"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="点歌须知" />
+            <Grid Background="Black" Grid.Row="1"/>
+            <TextBlock Grid.Row="2" TextWrapping="Wrap" Text="点歌格式：#点歌 歌曲名 歌手 [音乐源]例如：#点歌 红豆 王菲 [qq](中括号内可不填，默认使用网易云音乐源;qq对应QQ音乐,xiami对应虾米音乐,netease对应网易云音乐)"/>
+            <Grid Background="Black" Grid.Row="3"/>
+            <TextBlock Text="消息反馈打印" Grid.Row="4" />
+            <TextBox TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                     Name="printBox" Grid.Row="5" IsReadOnly="True" />
+        </Grid>
+    </Grid>
+</Window>

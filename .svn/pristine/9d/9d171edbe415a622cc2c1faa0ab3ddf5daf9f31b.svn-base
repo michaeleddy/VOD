@@ -1,0 +1,46 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using VOD.Lib.Models;
+
+namespace VOD.Lib
+{
+    public sealed class MusicClient
+    {
+        private HttpClient HttpClient { get; set; }
+        private const string MusicList = "";
+        private const string MusicUrl = "";
+        public MusicClient(HttpClient httpClient)
+        {
+            HttpClient = httpClient;
+        }
+        public MusicModel GetSongList(IEnumerable<string> sv)
+        {
+            MusicModel model = new MusicModel();
+            try
+            {
+                switch (sv.Count())
+                {
+                    case 2:
+                        {
+
+                            break;
+                        }
+                    case 3:
+                        {
+
+                            break;
+                        }
+                }
+            }
+            catch (Exception ex)
+            {
+                model.ErrorMsg = ex.Message;
+            }
+            return model;
+        }
+    }
+}

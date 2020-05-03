@@ -1,0 +1,18 @@
+﻿namespace VOD.Lib.Models
+{
+    public sealed class MusicModel
+    {
+        /// <summary>
+        /// 歌手名
+        /// </summary>
+        public string Singer { get; set; }
+        /// <summary>
+        /// 歌曲名
+        /// </summary>
+        public string SongName { get; set; }
+        /// <summary>
+        /// 歌曲地址
+        /// </summary>
+        public string SongUrl { get; set; }
+    }
+}

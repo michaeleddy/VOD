@@ -1,0 +1,43 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using VOD.Lib.Models;
+
+namespace VOD.Lib
+{
+    public sealed class MusicClient : IDisposable
+    {
+        private HttpClient HttpClient { get; set; }
+        private const string MusicList = "https://suen-music-api.leanapp.cn/?vendor={0}&method=searchSong&params=[{%22keyword%22:%22{1}%22}]";
+        private const string MusicUrl = "";
+        public MusicClient(HttpClient httpClient)
+        {
+            HttpClient = httpClient;
+        }
+        public MusicModel GetSongList(IEnumerable<string> sv)
+        {
+            MusicModel model = new MusicModel();
+            switch (sv.Count())
+            {
+                case 2:
+                    {
+
+                        break;
+                    }
+                case 3:
+                    {
+
+                        break;
+                    }
+            }
+            return model;
+        }
+        public void Dispose()
+        {
+
+        }
+    }
+}
