@@ -50,6 +50,12 @@
       <HintPath>..\packages\PInvoke.Windows.Core.0.6.6\lib\net20\PInvoke.Windows.Core.dll</HintPath>
     </Reference>
     <Reference Include="PresentationFramework" />
+    <Reference Include="Serilog, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
+      <HintPath>..\packages\Serilog.2.9.0\lib\net46\Serilog.dll</HintPath>
+    </Reference>
+    <Reference Include="Serilog.Sinks.File, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
+      <HintPath>..\packages\Serilog.Sinks.File.4.1.0\lib\net45\Serilog.Sinks.File.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -70,6 +76,7 @@
     <Compile Include="Libs\BigEndianBitConverter.cs" />
     <Compile Include="Libs\EndianBitConverter.cs" />
     <Compile Include="Libs\LittleEndianBitConverter.cs" />
+    <Compile Include="Libs\LogManager.cs" />
     <Compile Include="Libs\SingleConverter.cs" />
     <Compile Include="Models\DanmakuModel.cs" />
     <Compile Include="Models\DanmakuProtocol.cs" />

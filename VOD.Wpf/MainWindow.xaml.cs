@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using VOD.Lib;
+using VOD.Lib.Libs;
 using VOD.Lib.Models;
 using VOD.Wpf.Dialogs;
 
@@ -37,23 +38,30 @@ namespace VOD.Wpf
         }
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            string user = "user".GetConfig(), passwd = "passwd".GetConfig();
-            if (user.IsEmpty() || passwd.IsEmpty())
+            try
             {
-                Setting setting = new Setting();
-                if (setting.ShowDialog() == true)
-                    await Login(user, passwd);
-                else
+                string user = "user".GetConfig(), passwd = "passwd".GetConfig();
+                if (user.IsEmpty() || passwd.IsEmpty())
                 {
-                    MessageBox.Show("需要登录后才能使用哦qaq~", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    this.Close();
-                    Application.Current.Shutdown();
+                    Setting setting = new Setting();
+                    if (setting.ShowDialog() == true)
+                        await Login(user, passwd);
+                    else
+                    {
+                        MessageBox.Show("需要登录后才能使用哦qaq~", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        this.Close();
+                        Application.Current.Shutdown();
+                    }
                 }
+                else
+                    await Login(user, passwd);
+                player.MediaOpened += Player_MediaOpened;
+                player.MediaEnded += Player_MediaEnded;
             }
-            else
-                await Login(user, passwd);
-            player.MediaOpened += Player_MediaOpened;
-            player.MediaEnded += Player_MediaEnded;
+            catch(Exception ex)
+            {
+                LogManager.Instance.LogError("Window_Loaded", ex);
+            }
         }
         private void Player_MediaEnded(object sender, RoutedEventArgs e)
         {
@@ -87,38 +95,90 @@ namespace VOD.Wpf
         }
         private void Danmu_PlaySongEvt(object sender, EventModel e)
         {
-            lock (LockObj)
+            try
             {
-                songList.Items.Add(e.MusicInfo);
-                if (btnState.Content.ToString() == "播放")
+                lock (LockObj)
                 {
-                    player.Source = new Uri(e.MusicInfo.SongUrl, UriKind.RelativeOrAbsolute);
-                    player.Tag = e.MusicInfo.SongId;
-                    player.Play();
-                    btnState.Content = "暂停";
+                    songList.Items.Add(e.MusicInfo);
+                    if (btnState.Content.ToString() == "播放")
+                    {
+                        player.Source = new Uri(e.MusicInfo.SongUrl, UriKind.RelativeOrAbsolute);
+                        player.Tag = e.MusicInfo.SongId;
+                        player.Play();
+                        btnState.Content = "暂停";
+                    }
                 }
             }
-        }
-        private void Danmu_PrintEvt(object sender, EventModel e)
-        {
-            int totalline = printBox.GetLineIndexFromCharacterIndex(printBox.Text.Length);
-            if (totalline > 1000)
+            catch(Exception ex)
             {
-                var length = printBox.GetLineLength(500);
-                printBox.Text.Remove(0, length);
+                LogManager.Instance.LogError("Danmu_PlaySongEvt", ex);
             }
-            printBox.Text += string.Format("{0},时间:{1}{2}", e.PrintMsg ,e.DateTime.ToString("yyyy-MM-dd HH:mm:ss") , BreakLine);
-            printBox.ScrollToLine(printBox.GetLineIndexFromCharacterIndex(printBox.SelectionStart));
-            printBox.Focus();
-            printBox.Select(printBox.Text.Length, 0);
-            printBox.ScrollToLine(printBox.GetLineIndexFromCharacterIndex(printBox.SelectionStart));
+        }
+        private async void Danmu_PrintEvt(object sender, EventModel e)
+        {
+            try
+            {
+                int totalline = printBox.GetLineIndexFromCharacterIndex(printBox.Text.Length);
+                if (totalline > 1000)
+                {
+                    var length = printBox.GetLineLength(500);
+                    printBox.Text.Remove(0, length);
+                }
+                string msg = string.Format("{0},时间:{1}", e.PrintMsg, e.DateTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                if (e.Send) await Danmu.SendDanmu(msg);
+                printBox.Text += string.Format("{0}{1}", msg, BreakLine);
+                printBox.ScrollToLine(printBox.GetLineIndexFromCharacterIndex(printBox.SelectionStart));
+                printBox.Focus();
+                printBox.Select(printBox.Text.Length, 0);
+                printBox.ScrollToLine(printBox.GetLineIndexFromCharacterIndex(printBox.SelectionStart));
+            }
+            catch(Exception ex)
+            {
+                LogManager.Instance.LogError("Danmu_PrintEvt", ex);
+            }
         }
         private void btnState_Click(object sender, RoutedEventArgs e)
         {
-            if (songList.Items.Count > 0)
+            try
             {
-                if (btnState.Content.ToString() == "播放")
+                if (songList.Items.Count > 0)
                 {
+                    if (btnState.Content.ToString() == "播放")
+                    {
+                        player.Play();
+                        btnState.Content = "暂停";
+                    }
+                    else
+                    {
+                        player.Pause();
+                        btnState.Content = "播放";
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("没有歌曲！", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch(Exception ex)
+            {
+                LogManager.Instance.LogError("btnState_Click", ex);
+            }
+        }
+        private void btnNext_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (Guid.TryParse(player.Tag.ToString(), out Guid songId))
+                {
+                    var item = songList.Items.Find(x => x.SongId == songId);
+                    if (item != null)
+                        songList.Items.Remove(item);
+                }
+                var next = songList.Items.Get(0);
+                if (next != null)
+                {
+                    player.Source = new Uri(next.SongUrl, UriKind.RelativeOrAbsolute);
+                    player.Tag = next.SongId;
                     player.Play();
                     btnState.Content = "暂停";
                 }
@@ -128,49 +188,34 @@ namespace VOD.Wpf
                     btnState.Content = "播放";
                 }
             }
-            else
+            catch(Exception ex)
             {
-                MessageBox.Show("没有歌曲！", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        private void btnNext_Click(object sender, RoutedEventArgs e)
-        {
-            if (Guid.TryParse(player.Tag.ToString(), out Guid songId))
-            {
-                var item = songList.Items.Find(x => x.SongId == songId);
-                if (item != null)
-                    songList.Items.Remove(item);
-            }
-            var next = songList.Items.Get(0);
-            if (next != null)
-            {
-                player.Source = new Uri(next.SongUrl, UriKind.RelativeOrAbsolute);
-                player.Tag = next.SongId;
-                player.Play();
-                btnState.Content = "暂停";
-            }
-            else
-            {
-                player.Pause();
-                btnState.Content = "播放";
+                LogManager.Instance.LogError("btnNext_Click", ex);
             }
         }
         private void btnOpen_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new OpenFileDialog() { Filter = "音乐文件(*.mp3)|*.mp3" };
-            if (openFileDialog.ShowDialog() == true)
+            try
             {
-                EventModel model = new EventModel
+                var openFileDialog = new OpenFileDialog() { Filter = "音乐文件(*.mp3)|*.mp3" };
+                if (openFileDialog.ShowDialog() == true)
                 {
-                    MusicInfo = new MusicModel
+                    EventModel model = new EventModel
                     {
-                        SongChoser = "name".GetConfig(),
-                        SongUrl = openFileDialog.FileName,
-                        SongName = Path.GetFileNameWithoutExtension(openFileDialog.FileName),
-                        SongId = Guid.NewGuid()
-                    }
-                };
-                Danmu_PlaySongEvt(sender, model);
+                        MusicInfo = new MusicModel
+                        {
+                            SongChoser = "name".GetConfig(),
+                            SongUrl = openFileDialog.FileName,
+                            SongName = Path.GetFileNameWithoutExtension(openFileDialog.FileName),
+                            SongId = Guid.NewGuid()
+                        }
+                    };
+                    Danmu_PlaySongEvt(sender, model);
+                }
+            }
+            catch(Exception ex)
+            {
+                LogManager.Instance.LogError("btnOpen_Click", ex);
             }
         }
         private void AboutItem_Click(object sender, RoutedEventArgs e)

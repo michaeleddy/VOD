@@ -17,6 +17,10 @@
             <TextBlock Text="密码："/>
             <PasswordBox Height="28px" Name="txtPasswd" />
         </StackPanel>
+        <StackPanel Margin="12,0" Orientation="Vertical">
+            <TextBlock><Run>直播间ID：</Run><Run Foreground="Red">只支持真实直播间ID</Run></TextBlock>
+            <TextBox Name="txtRoomId" />
+        </StackPanel>
         <Button Margin="12,6" Height="28px" Click="btnSave_Click">保存</Button>
     </StackPanel>
 </Window>

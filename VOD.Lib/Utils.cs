@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Xml;
+using VOD.Lib.Libs;
 using VOD.Lib.Models;
 
 namespace VOD.Lib
@@ -41,7 +42,10 @@ namespace VOD.Lib
                 }
                 return models.FirstOrDefault(predicate);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                LogManager.Instance.LogError("Find", ex);
+            }
             return null;
         }
         public static string ReplaceSpace(this string str)
@@ -50,14 +54,21 @@ namespace VOD.Lib
         }
         public static async Task ReadBAsync(this Stream stream, byte[] buffer, int offset, int count)
         {
-            if (offset + count > buffer.Length) throw new ArgumentException();
-            int read = 0;
-            while (read < count)
+            try
             {
-                var available = await stream.ReadAsync(buffer, offset, count - read);
-                if (available == 0) throw new ObjectDisposedException(null);
-                read += available;
-                offset += available;
+                if (offset + count > buffer.Length) throw new ArgumentException();
+                int read = 0;
+                while (read < count)
+                {
+                    var available = await stream.ReadAsync(buffer, offset, count - read);
+                    if (available == 0) throw new ObjectDisposedException(null);
+                    read += available;
+                    offset += available;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Instance.LogError("ReadBAsync", ex);
             }
         }
         public static int ToInt32(this string num)
@@ -84,10 +95,18 @@ namespace VOD.Lib
         }
         public static string ToMD5(this string input)
         {
-            byte[] result = Encoding.UTF8.GetBytes(input.Trim());
-            MD5 md5 = new MD5CryptoServiceProvider();
-            byte[] output = md5.ComputeHash(result);
-            return BitConverter.ToString(output).Replace("-", "");
+            try
+            {
+                byte[] result = Encoding.UTF8.GetBytes(input.Trim());
+                MD5 md5 = new MD5CryptoServiceProvider();
+                byte[] output = md5.ComputeHash(result);
+                return BitConverter.ToString(output).Replace("-", "");
+            }
+            catch (Exception ex)
+            {
+                LogManager.Instance.LogError("ToMD5", ex);
+                return string.Empty;
+            }
         }
         public static string GetConfig(this string key)
         {
@@ -113,6 +132,12 @@ namespace VOD.Lib
             {
                 return false;
             }
+        }
+        public static bool IsEmptyArray<T>(this IEnumerable<T> objs)
+        {
+            if (objs == null) return true;
+            if (objs.Count() == 0) return true;
+            return false;
         }
         public static bool IsNotEmpty<T>(this T obj)
         {
@@ -142,7 +167,11 @@ namespace VOD.Lib
                 doc.Save(ConfigFile);
                 return SaveState.Update;
             }
-            catch { return SaveState.Failed; }
+            catch (Exception ex)
+            {
+                LogManager.Instance.LogError("SaveConfig", ex);
+                return SaveState.Failed;
+            }
         }
     }
 }

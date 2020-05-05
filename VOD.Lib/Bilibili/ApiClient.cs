@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using VOD.Lib.Libs;
 
 namespace VOD.Lib.Bilibili
 {
-    sealed class ApiClient
+    public sealed class ApiClient
     {
         public const string build = "5520400";
         public static long GetTimeSpan => Convert.ToInt64((DateTime.Now - new DateTime(1970, 1, 1, 8, 0, 0, 0)).TotalSeconds);
@@ -27,22 +27,30 @@ namespace VOD.Lib.Bilibili
         }
         public static string GetSign(string url, ApiKeyInfo apiKeyInfo = null)
         {
-            if (apiKeyInfo == null)
-                apiKeyInfo = AndroidKey;
-            string str = url.Substring(url.IndexOf("?", 4) + 1);
-            List<string> list = str.Split('&').ToList();
-            list.Sort();
-            StringBuilder stringBuilder = new StringBuilder();
-            foreach (string str1 in list)
+            try
             {
-                stringBuilder.Append((stringBuilder.Length > 0 ? "&" : string.Empty));
-                stringBuilder.Append(str1);
+                if (apiKeyInfo == null)
+                    apiKeyInfo = AndroidKey;
+                string str = url.Substring(url.IndexOf("?", 4) + 1);
+                List<string> list = str.Split('&').ToList();
+                list.Sort();
+                StringBuilder stringBuilder = new StringBuilder();
+                foreach (string str1 in list)
+                {
+                    stringBuilder.Append((stringBuilder.Length > 0 ? "&" : string.Empty));
+                    stringBuilder.Append(str1);
+                }
+                stringBuilder.Append(apiKeyInfo.Secret);
+                return stringBuilder.ToString().ToMD5().ToLower();
             }
-            stringBuilder.Append(apiKeyInfo.Secret);
-            return stringBuilder.ToString().ToMD5().ToLower();
+            catch(Exception ex)
+            {
+                LogManager.Instance.LogError("GetSign", ex);
+                return string.Empty;
+            }
         }
     }
-    sealed class ApiKeyInfo
+    public sealed class ApiKeyInfo
     {
         public ApiKeyInfo(string key, string secret)
         {

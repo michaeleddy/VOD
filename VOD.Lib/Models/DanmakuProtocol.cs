@@ -3,7 +3,7 @@ using VOD.Lib.Libs;
 
 namespace VOD.Lib.Models
 {
-   public  struct DanmakuProtocol
+    public struct DanmakuProtocol
     {
         /// <summary>
         /// 消息总长度 (协议头 + 数据长度)
@@ -27,15 +27,23 @@ namespace VOD.Lib.Models
         public int Parameter;
         public static DanmakuProtocol FromBuffer(byte[] buffer)
         {
-            if (buffer.Length < 16) { throw new ArgumentException(); }
-            return new DanmakuProtocol()
+            try
             {
-                PacketLength = EndianBitConverter.BigEndian.ToInt32(buffer, 0),
-                HeaderLength = EndianBitConverter.BigEndian.ToInt16(buffer, 4),
-                Version = EndianBitConverter.BigEndian.ToInt16(buffer, 6),
-                Action = EndianBitConverter.BigEndian.ToInt32(buffer, 8),
-                Parameter = EndianBitConverter.BigEndian.ToInt32(buffer, 12),
-            };
+                if (buffer.Length < 16) { throw new ArgumentException(); }
+                return new DanmakuProtocol()
+                {
+                    PacketLength = EndianBitConverter.BigEndian.ToInt32(buffer, 0),
+                    HeaderLength = EndianBitConverter.BigEndian.ToInt16(buffer, 4),
+                    Version = EndianBitConverter.BigEndian.ToInt16(buffer, 6),
+                    Action = EndianBitConverter.BigEndian.ToInt32(buffer, 8),
+                    Parameter = EndianBitConverter.BigEndian.ToInt32(buffer, 12),
+                };
+            }
+            catch (Exception ex)
+            {
+                LogManager.Instance.LogError("FromBuffer", ex);
+                return default;
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using VOD.Lib;
 using VOD.Lib.Models;
+using ApplicationForm = System.Windows.Forms.Application;
 
 namespace VOD.Wpf.Dialogs
 {
@@ -25,18 +26,23 @@ namespace VOD.Wpf.Dialogs
                 if (restartApp == false && value == SaveState.Update)
                     restartApp = true;
             }
+            if (txtRoomId.Text.IsNotEmpty())
+            {
+                var value = "roomid".SaveConfig(txtRoomId.Text);
+                if (restartApp == false && value == SaveState.Update)
+                    restartApp = true;
+            }
             if (restartApp == true)
             {
                 "uid".SaveConfig(string.Empty);
-                "roomid".SaveConfig(string.Empty);
                 "accesskey".SaveConfig(string.Empty);
             }
-            string msg = restartApp ? "保存成功，需要重新启动客户端！" : "保存成功！";
+            string msg = restartApp ? "保存成功，需要重新启动客户端！若没有配置直播间ID将自动获取账号对应的直播间ID。" : "保存成功！";
             if (MessageBox.Show(msg, "提示", MessageBoxButton.OK, MessageBoxImage.Information) == MessageBoxResult.OK && restartApp)
             {
                 this.DialogResult = true;
                 this.Close();
-                System.Windows.Forms.Application.Restart();
+                ApplicationForm.Restart();
                 Application.Current.Shutdown();
             }
         }
@@ -44,6 +50,7 @@ namespace VOD.Wpf.Dialogs
         {
             txtAccount.Text = "user".GetConfig();
             txtPasswd.Password = "passwd".GetConfig();
+            txtRoomId.Text = "roomid".GetConfig();
         }
     }
 }

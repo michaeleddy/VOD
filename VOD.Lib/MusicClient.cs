@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
+using VOD.Lib.Libs;
 using VOD.Lib.Models;
 
 namespace VOD.Lib
@@ -30,6 +31,12 @@ namespace VOD.Lib
             MusicModel model = new MusicModel();
             try
             {
+                sv = GetSongInfo(sv);
+                if (sv.IsEmptyArray())
+                {
+                    model.ErrorMsg = "点歌的格式不正确！";
+                    return model;
+                }
                 string key = HttpUtility.UrlEncode(string.Format("{0} {1}", sv[0], sv[1]));
                 string vendor = (sv.Count() == 3 ? SourceName.Exists(x => x == sv[2].ToLower()) ? sv[2].ToLower() : SourceName.FirstOrDefault() : "netease").ReplaceSpace();
                 string url = string.Format(MusicList, key, vendor);
@@ -75,9 +82,30 @@ namespace VOD.Lib
             }
             catch (Exception ex)
             {
+                LogManager.Instance.LogError("GetSongList", ex);
                 model.ErrorMsg = ex.Message;
             }
             return model;
+        }
+        private string[] GetSongInfo(string[] vs)
+        {
+            List<string> vss = new List<string>();
+            try
+            {
+                if (vs != null && vs.Length > 0)
+                {
+                    foreach (var v in vs)
+                    {
+                        if (v.ReplaceSpace().IsNotEmpty())
+                            vss.Add(v);
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                LogManager.Instance.LogError("GetSongInfo", ex);
+            }
+            return vss.ToArray();
         }
     }
 }

@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VOD.Lib.Bilibili;
+using VOD.Lib.Libs;
 using VOD.Lib.Models;
 
 namespace VOD.Lib
@@ -40,13 +41,14 @@ namespace VOD.Lib
                     string jsonStr = await HttpClient.GetResults(new Uri(url));
                     UserInfoModel infoModel = JsonConvert.DeserializeObject<UserInfoModel>(jsonStr);
                     "name".SaveConfig(infoModel.data.Card.Name);
-                    "roomid".SaveConfig(infoModel.data.live.roomid);
+                    if ("roomid".GetConfig().IsEmpty())
+                        "roomid".SaveConfig(infoModel.data.live.roomid);
                     return true;
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                LogManager.Instance.LogError("Login", ex);
             }
             return false;
         }
@@ -72,7 +74,7 @@ namespace VOD.Lib
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                LogManager.Instance.LogError("GetEncryptedPassword", ex);
                 base64String = passWord;
             }
             return base64String;

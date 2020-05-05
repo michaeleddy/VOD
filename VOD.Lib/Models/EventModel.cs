@@ -16,5 +16,9 @@ namespace VOD.Lib.Models
         /// 当前时间
         /// </summary>
         public DateTime DateTime { get; set; } = DateTime.Now;
+        /// <summary>
+        /// 是否发送弹幕
+        /// </summary>
+        public bool Send { get; set; } = true;
     }
 }

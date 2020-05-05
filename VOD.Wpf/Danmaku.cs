@@ -3,13 +3,13 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VOD.Lib;
+using VOD.Lib.Bilibili;
 using VOD.Lib.Libs;
 using VOD.Lib.Models;
 
@@ -25,7 +25,7 @@ namespace VOD.Wpf
         private MusicClient MusicClient { get; }
         private Stream NetStream { get; set; }
         private bool Connected { get; set; } = false;
-        private HttpClient HttpClient { get; }
+        private HttpClientEx HttpClient { get; }
         public delegate void PlaySongEvent(object sender, EventModel e);
         public event PlaySongEvent PlaySongEvt;
         public delegate void PrintEvent(object sender, EventModel e);
@@ -34,9 +34,30 @@ namespace VOD.Wpf
         {
             RoomId = "roomid".GetConfig().ToInt32();
             TcpClient = new TcpClient();
-            HttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            MusicClient = new MusicClient(HttpClient);
+            HttpClient = new HttpClientEx();
+            MusicClient = new MusicClient(HttpClient.BaseHttpClient);
             DefaultHosts = new string[] { "livecmt-2.bilibili.com", "livecmt-1.bilibili.com" };
+        }
+        public async Task SendDanmu(string text)
+        {
+            try
+            {
+                string sendText = $"cid={RoomId}&mid={ApiClient.UserId}&msg={text}&rnd={ApiClient.GetTimeSpan}&mode=1&pool=0&type=json&color=16777215&fontsize=25&playTime=0.0";
+                var url = $"https://api.live.bilibili.com/api/sendmsg?access_key={ApiClient.AccessKey}&actionKey=appkey&appkey={ApiClient.AndroidKey.Appkey}&build={ApiClient.build}&device=android&mobi_app=android&platform=android&ts={ApiClient.GetTimeSpan}";
+                url += "&sign=" + ApiClient.GetSign(url);
+                string result = await HttpClient.PostResults(url, sendText);
+                JObject jb = JObject.Parse(result);
+                var model = new EventModel
+                {
+                    PrintMsg = "发送弹幕结果:" + ((int)jb["code"] == 0),
+                    Send = false
+                };
+                PrintEvt?.Invoke(this, model);
+            }
+            catch (Exception ex)
+            {
+                LogManager.Instance.LogError("SendDanmu", ex);
+            }
         }
         public async Task<bool> ConnectAsync()
         {
@@ -45,7 +66,7 @@ namespace VOD.Wpf
                 var token = string.Empty;
                 try
                 {
-                    var req = await HttpClient.GetStringAsync("https://api.live.bilibili.com/room/v1/Danmu/getConf?room_id=" + RoomId);
+                    var req = await HttpClient.GetStringAsync(new Uri("https://api.live.bilibili.com/room/v1/Danmu/getConf?room_id=" + RoomId));
                     var roomobj = JObject.Parse(req);
                     token = roomobj["data"]["token"].ToString();
                     ChatHost = roomobj["data"]["host"].ToString();
@@ -71,7 +92,11 @@ namespace VOD.Wpf
                 }
                 return false;
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                LogManager.Instance.LogError("ConnectAsync", ex);
+                return false;
+            }
         }
         private async Task ReceiveMessageLoop()
         {
@@ -116,7 +141,11 @@ namespace VOD.Wpf
                     }
                 }
             }
-            catch { Disconnect(); }
+            catch (Exception ex)
+            {
+                LogManager.Instance.LogError("ReceiveMessageLoop", ex);
+                Disconnect();
+            }
         }
         private async void ProcessDanmaku(int action, byte[] buffer)
         {
@@ -170,7 +199,10 @@ namespace VOD.Wpf
                                     }
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            LogManager.Instance.LogError("ProcessDanmaku", ex);
+                        }
                         break;
                     }
             }
@@ -207,33 +239,48 @@ namespace VOD.Wpf
         }
         async Task SendSocketDataAsync(int packetlength, short magic, short ver, int action, int param = 1, string body = "")
         {
-            var playload = Encoding.UTF8.GetBytes(body);
-            if (packetlength == 0)
-                packetlength = playload.Length + 16;
-            var buffer = new byte[packetlength];
-            using (var ms = new MemoryStream(buffer))
+            try
             {
-                var b = EndianBitConverter.BigEndian.GetBytes(buffer.Length);
-                await ms.WriteAsync(b, 0, 4);
-                b = EndianBitConverter.BigEndian.GetBytes(magic);
-                await ms.WriteAsync(b, 0, 2);
-                b = EndianBitConverter.BigEndian.GetBytes(ver);
-                await ms.WriteAsync(b, 0, 2);
-                b = EndianBitConverter.BigEndian.GetBytes(action);
-                await ms.WriteAsync(b, 0, 4);
-                b = EndianBitConverter.BigEndian.GetBytes(param);
-                await ms.WriteAsync(b, 0, 4);
-                if (playload.Length > 0)
-                    await ms.WriteAsync(playload, 0, playload.Length);
-                await NetStream.WriteAsync(buffer, 0, buffer.Length);
+                var playload = Encoding.UTF8.GetBytes(body);
+                if (packetlength == 0)
+                    packetlength = playload.Length + 16;
+                var buffer = new byte[packetlength];
+                using (var ms = new MemoryStream(buffer))
+                {
+                    var b = EndianBitConverter.BigEndian.GetBytes(buffer.Length);
+                    await ms.WriteAsync(b, 0, 4);
+                    b = EndianBitConverter.BigEndian.GetBytes(magic);
+                    await ms.WriteAsync(b, 0, 2);
+                    b = EndianBitConverter.BigEndian.GetBytes(ver);
+                    await ms.WriteAsync(b, 0, 2);
+                    b = EndianBitConverter.BigEndian.GetBytes(action);
+                    await ms.WriteAsync(b, 0, 4);
+                    b = EndianBitConverter.BigEndian.GetBytes(param);
+                    await ms.WriteAsync(b, 0, 4);
+                    if (playload.Length > 0)
+                        await ms.WriteAsync(playload, 0, playload.Length);
+                    await NetStream.WriteAsync(buffer, 0, buffer.Length);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Instance.LogError("SendSocketDataAsync", ex);
             }
         }
         private async Task<bool> SendJoinChannel(int channelId, string token)
         {
-            var packetModel = new { roomid = channelId, uid = 0, protover = 2, token, platform = "danmuji" };
-            var playload = JsonConvert.SerializeObject(packetModel);
-            await SendSocketDataAsync(7, playload);
-            return true;
+            try
+            {
+                var packetModel = new { roomid = channelId, uid = 0, protover = 2, token, platform = "danmuji" };
+                var playload = JsonConvert.SerializeObject(packetModel);
+                await SendSocketDataAsync(7, playload);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogManager.Instance.LogError("SendJoinChannel", ex);
+                return false;
+            }
         }
         public void Dispose()
         {
